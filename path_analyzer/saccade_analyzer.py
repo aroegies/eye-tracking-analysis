@@ -36,21 +36,28 @@ class SaccadeAnalyzer(object):
                 return self.AOIs[i]
         return "NA"
     def _process_tracking(self,df):
-        self.AOIs = list(df.columns[12:])
+        self.AOIs = list(df.columns[10:])
         session_paths = []
         fixation = 0
         session_path = []
+        session_map = dict()
+        count = 0
         for idx, row in df.iterrows():
             newFixation = row['FixationIndex']
             if newFixation < fixation:
+                session_map[count] = id
                 session_paths.append(session_path)
-                aoi = self._determineAOI(row[12:])
+                aoi = self._determineAOI(row[10:])
                 session_path = [FixationEvent(aoi,row['FixationPointX (MCSpx)'],row['FixationPointX (MCSpx)'])]
+                count+=1
             else:
-                aoi = self._determineAOI(row[12:])
+                aoi = self._determineAOI(row[10:])
                 session_path.append(FixationEvent(aoi,row['FixationPointX (MCSpx)'],row['FixationPointX (MCSpx)']))
             fixation = newFixation
+            id = row['ParticipantName']
+        session_map[count]=id
         session_paths.append(session_path)
+        self.participants = session_map
         return session_paths
     
     def _create_saccade_paths(self):
@@ -109,4 +116,16 @@ class SaccadeAnalyzer(object):
             saccade_data.append(dists)
         return saccade_data
 
-            
+    def first_saccade_distance(self):
+        all_firsts = []
+        for idx, session in enumerate(self._saccade_paths):
+            firsts = defaultdict(float)
+            total = 0.0
+            for saccade in session:
+                total += saccade.dist
+                if saccade.dst_aoi not in firsts:
+                    firsts[saccade.dst_aoi] = total    
+                
+            all_firsts.append(firsts)
+        return all_firsts
+

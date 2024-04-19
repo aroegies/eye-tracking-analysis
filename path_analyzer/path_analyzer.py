@@ -7,7 +7,7 @@ class PathSubsequence(object):
     def __init__(self,items):
         self._subsequence = items
     def __str__(self):
-        return 'Seq: ' + ' => '.join(self._subsequence)
+        return ' => '.join(self._subsequence)
     def __repr__(self):
         return self.__str__()
     def __eq__(self,other):
@@ -37,19 +37,19 @@ class PathAnalyzer(object):
         return "NA"
     
     def _process_tracking(self,df):
-        self.AOIs = list(df.columns[2:])
+        self.AOIs = list(df.columns[10:])
         session_paths = []
         fixation = 0
         session_path = []
         for idx, row in df.iterrows():
-            newFixation = row['FixationID']
+            newFixation = row['FixationIndex']
             if newFixation < fixation:
                 session_paths.append(session_path)
-                aoi = self._determineAOI(row[2:])
-                session_path = [(row['TS'],aoi)]
+                aoi = self._determineAOI(row[10:])
+                session_path = [(row['GazeEventDuration'],aoi)]
             else:
-                aoi = self._determineAOI(row[2:])
-                session_path.append((row['TS'],aoi))
+                aoi = self._determineAOI(row[10:])
+                session_path.append((row['GazeEventDuration'],aoi))
             fixation = newFixation
         session_paths.append(session_path)
         return session_paths
@@ -119,6 +119,40 @@ class PathAnalyzer(object):
                 session_revisits[idx][aoi] = (len(revisits),revisits)
         return session_revisits
     
+
+    def scan_path_dwell(self):
+        total_dwells = []
+        aois = self.AOIs
+        aois.append('NA')
+        for idx, session in enumerate(self._session_paths):
+            dwell = defaultdict(float)
+            total_dwell = 0
+            for fixation in session:
+                dwell[fixation[1]] += fixation[0]
+                total_dwell += fixation[0]
+            normalized = []
+            for aoi in aois:
+                if aoi in dwell:
+                    normalized.append(tuple([aoi,dwell[aoi]/total_dwell]))
+                else:
+                    normalized.append(tuple([aoi,0.0]))
+            total_dwells.append(normalized)
+        return total_dwells
+    
+    # Revisit once I'm sure how this ought to be calculated (need timestamps)            
+    def first_fixation(self):
+        all_firsts = []
+        for idx, session in enumerate(self._session_paths):
+            firsts = defaultdict(float)
+            total = 0.0
+            for fixation in session:
+                if fixation[1] not in firsts:
+                    firsts[fixation[1]] = total
+                total += fixation[0]
+            all_firsts.append(firsts)
+        return all_firsts
+
+
     def print_paths(self):
         for idx, session in enumerate(self._session_paths):
             print("Session {0}: {1}".format(idx,' => '.join("{0} ({1}ms)".format(fixation[1],fixation[0]) for fixation in session)))
