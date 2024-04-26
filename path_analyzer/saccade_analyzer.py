@@ -98,7 +98,7 @@ class SaccadeAnalyzer(object):
             paired = defaultdict(list)
             for saccade in session:
                 distances.append(saccade.dist)
-                paired[saccade.event].append(saccade.dist)
+                paired[tuple([saccade.src_aoi,saccade.dst_aoi])].append(saccade.dist)
             saccade_data.append(tuple([idx,np.sum(distances),np.mean(distances),np.std(distances),paired]))
         return saccade_data
     
