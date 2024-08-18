@@ -11,6 +11,15 @@ class FixationEvent(object):
         self.y = y
         self.point = np.array([x,y])
 
+class BoundingBox(object):
+    def __init__(self, x,y,width,height):
+        self.left,self.top,self.right,self.bottom = x,y,x+width,y+height
+
+    def overlaps(self,event):
+        if (event.x >= self.left and self.right > event.x) and (event.y >= self.top and self.bottom > event.y):
+            return True
+        return False
+
 class SaccadeEvent(object):
     def __init__(self,src,dst):
         self.event = src.aoi+"-"+dst.aoi
@@ -19,7 +28,7 @@ class SaccadeEvent(object):
         self.dst_aoi = dst.aoi
 
 class SaccadeAnalyzer(object):
-    def __init__(self,xlsx_file=None,tsv_file=None):
+    def __init__(self,xlsx_file=None,tsv_file=None,ignoreNA=False):
         if xlsx_file == None and tsv_file == None:
             raise Exception("required file not present")
         
@@ -27,7 +36,7 @@ class SaccadeAnalyzer(object):
             self._data = pd.read_excel(xlsx_file)
         elif tsv_file != None:
             self._data = pd.read_csv(tsv_file,sep='\t')
-        self._session_paths =self._process_tracking(self._data)
+        self._session_paths =self._process_tracking(self._data,ignoreNA)
         self._saccade_paths = self._create_saccade_paths()
 
     def _determineAOI(self,fixations):
@@ -35,7 +44,7 @@ class SaccadeAnalyzer(object):
             if elt == 1:
                 return self.AOIs[i]
         return "NA"
-    def _process_tracking(self,df):
+    def _process_tracking(self,df,ignoreNA):
         self.AOIs = list(df.columns[10:])
         session_paths = []
         fixation = 0
@@ -48,11 +57,15 @@ class SaccadeAnalyzer(object):
                 session_map[count] = id
                 session_paths.append(session_path)
                 aoi = self._determineAOI(row[10:])
-                session_path = [FixationEvent(aoi,row['FixationPointX (MCSpx)'],row['FixationPointX (MCSpx)'])]
                 count+=1
+                if ignoreNA and aoi == "NA":
+                    session_path = []
+                else: 
+                    session_path = [FixationEvent(aoi,row['FixationPointX (MCSpx)'],row['FixationPointY (MCSpx)'])]
             else:
                 aoi = self._determineAOI(row[10:])
-                session_path.append(FixationEvent(aoi,row['FixationPointX (MCSpx)'],row['FixationPointX (MCSpx)']))
+                if not(ignoreNA and aoi == "NA"):
+                    session_path.append(FixationEvent(aoi,row['FixationPointX (MCSpx)'],row['FixationPointY (MCSpx)']))
             fixation = newFixation
             id = row['ParticipantName']
         session_map[count]=id
@@ -62,8 +75,9 @@ class SaccadeAnalyzer(object):
     
     def _create_saccade_paths(self):
         saccade_paths = []
-        for session in self._session_paths:
+        for i,session in enumerate(self._session_paths):
             if len(session) <= 2:
+                print(i)
                 saccade_paths.append([])
                 continue
             saccade_path = []
@@ -129,3 +143,20 @@ class SaccadeAnalyzer(object):
             all_firsts.append(firsts)
         return all_firsts
 
+    def first_overlapping_bounding_box(self,boxes):
+        boxOverlaps = []
+        for session in self._session_paths:
+            found = False
+            count = 0
+            for event in session:
+                for name,bb in boxes.items():
+                    if bb.overlaps(event):
+                        found = True
+                        boxOverlaps.append([name,count])
+                        break
+                count+=1
+                if found:
+                    break
+            if not found:
+                boxOverlaps.append(["No Overlap", count])
+        return boxOverlaps

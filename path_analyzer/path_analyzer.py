@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from nltk.util import ngrams,skipgrams
 from collections import Counter, defaultdict
 
@@ -138,19 +139,6 @@ class PathAnalyzer(object):
                     normalized.append(tuple([aoi,0.0]))
             total_dwells.append(normalized)
         return total_dwells
-    
-    # Revisit once I'm sure how this ought to be calculated (need timestamps)            
-    def first_fixation(self):
-        all_firsts = []
-        for idx, session in enumerate(self._session_paths):
-            firsts = defaultdict(float)
-            total = 0.0
-            for fixation in session:
-                if fixation[1] not in firsts:
-                    firsts[fixation[1]] = total
-                total += fixation[0]
-            all_firsts.append(firsts)
-        return all_firsts
 
 
     def print_paths(self):
