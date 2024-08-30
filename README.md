@@ -15,7 +15,7 @@ We provide example data in `example-export.xlsx` which can be used to do rudimen
 Note that if there is no fixation on an AOI that we create a pseudo-fixation called `NA` but this can be turned off by setting the `ignoreNA` parameter when loading data into one of the relevant classes.
 
 The following is an example of the Tobii export settings:
-!(Tobii Export Settings)[images/export_checklist.png "Tobii Export Settings"]
+![Tobii Export Settings](images/export_checklist.png "Tobii Export Settings")
 
 ## Saccade Analysis
 
