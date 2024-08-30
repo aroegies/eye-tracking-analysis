@@ -14,6 +14,9 @@ We provide example data in `example-export.xlsx` which can be used to do rudimen
 
 Note that if there is no fixation on an AOI that we create a pseudo-fixation called `NA` but this can be turned off by setting the `ignoreNA` parameter when loading data into one of the relevant classes.
 
+The following is an example of the Tobii export settings:
+!(Tobii Export Settings)[images/export_checklist.png "Tobii Export Settings"]
+
 ## Saccade Analysis
 
 `path_analyzer/saccade_analyzer.py` is the primary class that facilitates saccade analysis. The underlying logic relies on creating "saccade paths" which are essentially the sequence of pairs of fixations in a scan path and the _screen pixel_ distance between each pair of fixation. We use the Euclidean distance between points to be more easily understood by humans than commonly reported saccade amplitude as the latter relates to eye movement and not distance between UI elements. We also note that we treat these as directed edges and so the pair `<A,B>` is different than the pair `<B,A>`
